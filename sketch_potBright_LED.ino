@@ -1,7 +1,10 @@
 //LED inputs
 //LED is connected to pin 11 and ground
 // be sure to put a resistor in series with the LED!
-#define LED_PIN 11
+#define LED_PIN 11 //Basic LED
+#define Basic_R 7 //State showing Red LED
+#define Basic_G 8 //State showing Red LED
+#define Basic_B 9 //State showing Red LED
 
 // Rotary Encoder Inputs
 // Roatery encoder is connected with
@@ -13,6 +16,10 @@
 #define CLK 2
 #define DT 3
 #define SW 4
+#define R_led 5
+#define G_led 6
+#define B_led 10
+
 // can also define these as constant integers
 
 //more with roatery encoder
@@ -24,19 +31,31 @@ unsigned long lastButtonPress = 0; // used to debounce a switch
 
 // this is the starting brightness of the LED, it can be any value in between 0 and 255
 int LED_brightness = 100;
+int LED_control = 0;
+uint8_t LED_R = 100; //Type only allows 0-255
+uint8_t LED_G = 100;
+uint8_t LED_B = 100;
 
 void setup() {
   // put your setup code here, to run once:
 
   pinMode(LED_PIN, OUTPUT); // set led pin to be an output pin
 
+  //RGB led setup
+  pinMode(R_led, OUTPUT);
+  pinMode(G_led, OUTPUT);
+  pinMode(B_led, OUTPUT);
+  //State LEDsetups
+  pinMode(Basic_R, OUTPUT);
+  pinMode(Basic_G, OUTPUT);
+  pinMode(Basic_B, OUTPUT);  
   // Set encoder pins as inputs
 	pinMode(CLK,INPUT);
 	pinMode(DT,INPUT);
 	pinMode(SW, INPUT_PULLUP);
 
   // Setup Serial Monitor
-	Serial.begin(9600); //9600 is a standard value for data transfer
+	Serial.begin(9600); //9600 is a standard value for data   transfer
 
   // Read the initial state of CLK
 	lastStateCLK = digitalRead(CLK);  
@@ -44,6 +63,14 @@ void setup() {
   //LED takes value from 0 to 255
   //set LED to the default brightness value
   analogWrite(LED_PIN, LED_brightness);
+  analogWrite(R_led, LED_R);
+  analogWrite(G_led, LED_G);
+  analogWrite(B_led, LED_B);
+
+  //Sets the state showing LEDs, they are only digital
+  digitalWrite(Basic_R, 1);
+  digitalWrite(Basic_G, 0);
+  digitalWrite(Basic_B, 0);
 
 }
 
@@ -68,6 +95,32 @@ void loop() {
         LED_brightness = LED_brightness-10;
       }
       currentDir = "CCW";
+      //RGB
+      if(LED_control == 0){
+        if(LED_R > 0){
+          LED_R = LED_R-10;
+        }
+        else{
+          LED_R = 0;
+        }
+      }
+      else if(LED_control == 1){
+        if(LED_G > 0){
+          LED_G = LED_G-10;
+        }
+        else{
+          LED_G = 0;
+        }
+        
+      }
+      else{
+        if(LED_B > 0){
+          LED_B = LED_B-10;
+        }
+        else{
+          LED_B = 0;
+        }
+      }
     }
     else{
       //Encoder is rotating CW so increment
@@ -77,10 +130,40 @@ void loop() {
         LED_brightness = LED_brightness+10;
       }
       currentDir = "CW ";
+
+      //RGB
+      if(LED_control == 0){
+        if(LED_R < 250){
+          LED_R = LED_R+10;
+        }
+        else{
+          LED_R = 250;
+        }
+      }
+      else if(LED_control == 1){
+        if(LED_G < 250){
+          LED_G = LED_G+10;
+        }
+        else{
+          LED_G = 250;
+        }
+        
+      }
+      else{
+        if(LED_B < 250){
+          LED_B = LED_B+10;
+        }
+        else{
+          LED_B = 250;
+        }
+      }
     }
 
     //set the LED to the new brightness of the LED
     analogWrite(LED_PIN, LED_brightness);
+    analogWrite(R_led, LED_R);
+    analogWrite(G_led, LED_G);
+    analogWrite(B_led, LED_B);
 
     //Print to serial monitor
     Serial.print("Direction: ");
@@ -107,11 +190,39 @@ void loop() {
       //set brightness to 0
       LED_brightness = 0;
       analogWrite(LED_PIN, LED_brightness);
+      //Swich state of RGB control
+      if(LED_control < 2){
+        LED_control = LED_control + 1;        
+      }
+      else{
+        LED_control = 0;        
+      }
+      Serial.println("State changed");
+
+
+      //Show state of system on control LEDs
+      if(LED_control == 0){
+        digitalWrite(Basic_R, 1);
+        digitalWrite(Basic_G, 0);
+        digitalWrite(Basic_B, 0);
+      }
+      else if(LED_control == 1){
+        digitalWrite(Basic_R, 0);
+        digitalWrite(Basic_G, 1);
+        digitalWrite(Basic_B, 0);
+      }
+      else{
+        digitalWrite(Basic_R, 0);
+        digitalWrite(Basic_G, 0);
+        digitalWrite(Basic_B, 1);
+      }
     }
 
     //Save last button press event
     lastButtonPress = millis();
   }
+
+  
 
   //put in slight delay to debounce the reading
   delay(1);
